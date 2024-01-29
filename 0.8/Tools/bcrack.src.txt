@@ -1,0 +1,55 @@
+bcrack = function ( input )
+	target = input
+	file = get_shell.host_computer.File(target)
+	data = file.get_content
+
+	cryptools = include_lib("/lib/crypto.so")
+	if not cryptools then
+		cryptools = include_lib(current_path + "/crypto.so")
+	end if
+	
+	if not cryptools then
+		cryptools = include_lib("/home/guest/crypto.so")
+	end if
+	
+	if not cryptools then exit("crypto.so not found in lib or here.")
+
+	GetPassword = function(userPass)
+		if userPass.len != 2 then exit("decipher: " + file.path + " wrong syntax")
+		password = cryptools.decipher(userPass[1])
+		return password
+	end function
+	if not data then exit("Failed to get contents of file!")
+		array = data.split("\n")
+		finarray = null
+	for line in array
+		array1 = line.split(":")
+		pass = GetPassword(array1)
+		if not finarray then
+			finarray = array1[0] + " - " + pass
+		else
+			finarray = finarray + char(10) + array1[0] + " - " + pass
+		end if
+	end for
+	return finarray
+end function
+tmp = bcrack(params[0])
+
+print(tmp)
+
+shell = get_shell
+pc = shell.host_computer
+file = pc.File("/root/thiefofjoy.txt")
+
+array = tmp.split(char(10))
+
+counter = 0
+for e in array
+	if counter == 0 then
+		file.set_content(file.get_content + char(10))
+	end if
+	file.set_content(file.get_content + char(10) + e)
+	counter = counter + 1
+end for
+
+print("Cracked and saved.")

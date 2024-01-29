@@ -1,0 +1,436 @@
+data = get_custom_object
+
+mx = include_lib("/lib/metaxploit.so")
+
+if not mx then
+	mx = include_lib(current_path + "/metaxploit.so")
+end if
+
+if not mx then
+	mx = include_lib("/home/guest/metaxploit.so")
+end if
+
+if not mx then
+	mx = include_lib("/root/metaxploit.so")
+end if
+
+if not mx then
+	data["myShell"].scp("/lib/metaxploit.so",current_path,get_shell)
+	mx = include_lib(current_path + "/metaxploit.so")
+end if
+
+if not mx then exit("You might need to put metaxploit here however you managed to get me here!")
+
+shell = get_shell
+
+if params[0] == "libs" then
+	shell = get_shell
+	pc = shell.host_computer
+	dir = pc.File("/lib")
+	data["libs"] = []
+		
+	for file in dir.get_files
+		lib = mx.load(file.path)
+		data["libs"].push(lib)
+	end for
+	print("Libs loaded into shared memory.")
+
+else if params[0] == "shell" then
+	userPass = user_input("Password: ",true)
+	shell = get_shell(params[1],userPass)
+	data["shells"].push(shell)
+	print("Shell loaded.")
+
+else if params[0] == "rshells" then
+	shells = mx.rshell_server
+	data["rshells"] = shells
+
+else if params[0] == "access" then
+	if params[1] != "local" then
+		ipAddress = params[1]
+		port = params[2].to_int
+		option = ""
+	
+		net = mx.net_use(ipAddress, port)
+		lib = net.dump_lib
+	else
+		lib = data["lib"]
+		hacks = data["hacks"]
+		option = params[2]
+		
+		shells = []
+		pcs = []
+		
+		for hack in hacks
+			for value in hack["values"]
+				result = lib.overflow(hack["memory"],value,option)
+				if typeof(result) == "shell" then
+					shells.push(result)
+				else if typeof(result) == "computer" then
+					pcs.push(result)
+				end if
+			end for
+		end for
+	
+		root_shells = []
+		user_shells = []
+		guest_shells = []
+		
+		while shells.len > 0
+			shell = shells.pull
+			pc = shell.host_computer
+			dir = pc.File("/home/guest")
+			user = ""
+			
+			if not dir.has_permission("w") then
+				print("Permission denied to /home/guest!")
+			else
+				pc.touch("/home/guest","toomuch")
+				file = pc.File("/home/guest/toomuch")
+				user = file.owner
+				
+				if user == "root" then
+					root_shells.push(shell)
+				else if user == "guest" then
+					guest_shells.push(shell)
+				else
+					user_shells.push(shell)
+				end if
+			end if
+		end while
+
+		shell = null
+		pc = null
+		option = ""
+		
+		if root_shells.len > 0 then
+			shell = root_shells.pull
+			data["shells"].push(shell)
+			print("Root shell found.")
+		else if user_shells.len > 0 then
+			shell = user_shells.pull
+			data["shells"].push(shell)
+			print("User shell loaded.")
+		else if guest_shells.len > 0 then
+			option = user_input("Only found guest shell. Load it? (y/n): ")
+			if option.lower == "y" then
+				shell = guest_shells.pull
+				data["shells"].push(shell)
+				print("Guest shell loaded.")
+			end if
+		end if
+	
+		shell = null
+		root_pcs = []
+		user_pcs = []
+		guest_pcs = []
+		user = ""
+		print(pcs)
+		
+		if not (root_shells.len > 0 or user_shells.len > 0 or (option == "y" and guest_shells.len > 0)) then
+			print("No shells found! Trying for computers.")
+			while pcs.len > 0
+				pc = pcs.pull
+				dir = pc.File("/home/guest")
+				if not dir.has_permission("w") then
+					print("Permission denied to /home/guest!")
+				else
+					pc.touch("/home/guest","toomuch")
+					file = pc.File("/home/guest/toomuch")
+					user = file.owner
+					
+					if user == "root" then
+						root_pcs.push(pc)
+					else if user == "guest" then
+						user_pcs.push(pc)
+					else
+						guest_pcs.push(pc)
+					end if
+				end if
+			end while
+	
+			if root_pcs.len > 0 then
+				pc = root_pcs.pull
+				data["pcs"].push(pc)
+				print("Root PC loaded.")
+			else if user_pcs.len > 0 then
+				pc = user_pcs.pull
+				data["pcs"].push(pc)
+				print("User PC loaded.")
+			else if guest_pcs.len > 0 then
+				option = user_input("Guest PC found. Load it? (y/n): ")
+				if option.lower == "y" then
+					print(guest_pcs)
+					pc = guest_pcs.pull
+					data["pcs"].push(pc)
+					print("Guest PC loaded.")
+				end if
+			else
+				print("Couldn't find any access!")
+			end if
+		end if
+	end if
+else if params[0] == "banks" then
+	net = mx.net_use(get_shell.host_computer.network_gateway,0)
+	lib = net.dump_lib
+	addresses = mx.scan(lib)
+	hacks = []
+	for mem in addresses
+		raw = mx.scan_address(lib, mem)
+		pair = {}
+		values = []
+		strings = raw.split("Unsafe check: ")[1:]
+		for string in strings
+			value = string[string.indexOf("<b>")+3:string.indexOf("</b>")]
+			values.push(value)
+		end for
+		pair["memory"] = mem
+		pair["values"] = values
+		hacks.push(pair)
+	end for
+	
+	router = get_router
+	devices = router.devices_lan_ip
+	
+	routers = []
+	hosts = []
+	devices2 = []
+	router = null
+	
+	for device in devices
+		router = get_router(device)
+		
+		if router then
+			devices2.push(router.devices_lan_ip)
+		end if
+		
+		router = null
+	end for
+	
+	map = {}
+	
+	for device in devices2
+		router = get_router(device)
+		
+		if router then
+			map[device] = router
+		else
+			map[device] = device
+		end if
+		
+		router = null
+	end for
+	
+	for entry in map
+		if typeof(entry["value"]) == "router" then
+			routers.push(entry["value"])
+		else
+			hosts.push(entry["value"])
+		end if
+	end for
+	
+	array = []
+	
+	for l in hosts
+		for e in l
+			array.push(e)
+		end for
+	end for
+	
+	shells = []
+	pcs = []
+	files = []
+	banks = []
+	file = null
+	
+	for hack in hacks
+		for value in hack["values"]
+			for host in array
+				result = lib.overflow(hack["memory"],value,host)
+				
+				if typeof(result) == "shell" then
+					shell = result
+					pc = shell.host_computer
+					dir = pc.File("/home")
+					for folder in dir.get_folders
+						for fol in folder.get_folders
+							if fol.name == "Config" then
+								for file in fol.get_files
+									if file.name == "Bank.txt" then
+										banks.push(file.get_content)
+									end if
+								end for
+							end if
+						end for
+					end for
+				else if typeof(result) == "computer" then
+					pc = result
+					dir = pc.File("/home")
+					for folder in dir.get_folders
+						for fol in folder.get_folders
+							if fol.name == "Config" then
+								for file in fol.get_files
+									if file.name == "Bank.txt" then
+										banks.push(file.get_content)
+									end if
+								end for
+							end if
+						end for
+					end for
+				else if typeof(result) == "file" then
+					dir = result
+					while dir.path != "/"
+						dir = dir.parent
+					end while
+					
+					for folder in dir.get_folders
+						if folder.name == "home" then
+							dir = folder
+						end if
+					end for
+					
+					for folder in dir.get_folders
+						for fol in folder.get_folders
+							if fol.name == "Config" then
+								for file in fol.get_files
+									banks.push(file.get_content)
+								end for
+							end if
+						end for
+					end for
+				end if
+			end for
+		end for
+	end for
+	
+	print(banks)
+	data["banks"] = banks
+	
+else if params[0] == "network" then
+	router = get_router
+	devices = router.devices_lan_ip
+	
+	routers = []
+	hosts = []
+	devices2 = []
+	router = null
+	
+	for device in devices
+		router = get_router(device)
+		
+		if router then
+			devices2.push(router.devices_lan_ip)
+		end if
+		
+		router = null
+	end for
+	
+	map = {}
+	router = null
+	for list in devices2
+		for device in list
+			router = get_router(device)
+		
+			if router then
+				map[device] = router
+			else
+				map[device] = device
+			end if
+			router = null
+		end for
+	end for
+	
+	for entry in map
+		if typeof(entry["value"]) == "router" then
+			routers = routers + [entry["value"]]
+		else
+			hosts = hosts + [entry["value"]]
+		end if
+	end for
+	
+	print("-----Routers-----")
+	
+	for r in routers
+		print(r.local_ip + " v" + r.kernel_version)
+	end for
+
+	print("-----Hosts-----")
+	for host in hosts
+		print(host)
+	end for
+
+else if params[0] == "local" and params[1] == "exploits" then
+	dest = params[2]
+	
+	shell = get_shell
+	pc = shell.host_computer
+	dir = pc.File(params[3])
+	
+	target = dest.split("/")
+	target = target[-1]
+	
+	if dest[0] == "/" then
+
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		
+		dest = dest.split("/")[1:-1]
+	else
+		dest = dest.split("/")[:-1]
+	end if
+	
+	for e in dest
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+
+	for f in dir.get_files
+		if f.name == target then
+			lib = mx.load(f.path)
+			data["lib"] = lib
+		end if
+	end for
+	
+end if
+
+shell = get_shell
+pc = shell.host_computer
+file = pc.File(program_path)
+mxLoc = file.parent
+found = false
+
+for f in mxLoc.get_files
+	if f.name == "metaxploit.so" then
+		mxLoc = f
+		found = true
+	end if
+end for
+
+if file.owner == "root" then
+	log = pc.File("/var/system.log")
+
+	file.delete
+	if found then
+		mxLoc.delete
+	end if
+	
+	if log.has_permission("w") then
+		log.copy("/var","system.bak")
+		log = pc.File("/var/system.bak")
+		log.move("/var","system.log")
+	end if
+
+else
+	print("Couldn't clean up logs.")
+	if mxLoc.owner == file.owner and found then
+		mxLoc.delete
+	end if
+end if

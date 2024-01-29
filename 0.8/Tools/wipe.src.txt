@@ -1,0 +1,28 @@
+//Should be run from the penetration point (so reboot disconnects) and run this
+//program via the sudo command.
+
+//Coded by Daknit
+
+shell = get_shell
+pc = shell.host_computer
+dir = pc.File("/")
+
+for file in pc.File("/boot").get_files
+	file.delete
+end for
+
+print("Deleting boot files.")
+
+for file in pc.File("/home/guest").get_files
+	file.delete
+end for
+
+print("Deleting uploaded files...")
+
+print("Deleting self...")
+pc.File(program_path).delete
+
+print("Deleting logs...")
+pc.File("/var/system.log").delete
+
+print("Done! Reboot machine!")

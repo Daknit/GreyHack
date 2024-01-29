@@ -1,0 +1,70 @@
+import_code("/root/tools/sectools/secfuncs.src")
+import_code("/root/src/recover.src")
+
+shell = get_shell
+pc = shell.host_computer
+file = pc.File("/")
+data = get_custom_object
+cTime = ""
+mx = include_lib("/lib/metaxploit.so")
+
+if not mx then
+	mx = include_lib("/root/metaxploit.so")
+end if
+
+if not mx then
+	mx = include_lib(current_path + "/metaxploit")
+end if
+
+if not mx then
+	mx = include_lib("/home/guest/metaxploit.so")
+end if
+
+if not mx then exit("Error 101")
+
+apt = include_lib("/lib/aptclient.so")
+fTime = true
+lTime = ""
+data["rshells"] = []
+data["rshells"] = data["rshells"] + [shell.connect_service("222.115.52.105",22,"root","portal")]
+data["rshells"] = data["rshells"] + [data["rshells"][0].connect_service("192.168.69.3",22,"root","Loki")]
+data["rshells"] = data["rshells"] + [data["rshells"][1].connect_service("192.168.69.69",22,"root","Merlin")]
+data["rshells"][-1].launch("/root/getshells")
+data["mx"] = mx
+lastDay = "0"
+running = 1
+
+while running
+
+	cTime = current_date.split(" - ")[1]
+	cDay = current_date.split(" - ")[0]
+	
+	if cDay != lastDay then
+		daily(shell)
+
+		for s in data["rshells"]
+			daily(s)
+		end for
+
+		lastDay = cDay
+	end if
+
+	if fTime then
+		print("Time is: " + cTime)
+		fTime = false
+		lTime = cTime.split(":")[1]
+	else if not fTime and not lTime == cTime.split(":")[1] then
+		fTime = true
+		clear_screen
+	end if
+
+	logmon(shell)
+	filemon(shell)
+
+	for s in data["rshells"]
+		logmon(s)
+		filemon(s)
+	end for
+
+	yield
+end while

@@ -1,0 +1,81 @@
+shell = get_shell
+pc = shell.host_computer
+dir = pc.File("/root/libraries")
+
+mx = include_lib("/lib/metaxploit.so")
+
+for fol in dir.get_folders
+	list = pc.File(fol.path + "/libs.txt")
+	
+	if not list then
+		pc.touch(fol.path,"libs.txt")
+		list = pc.File(fol.path + "/libs.txt")
+	else
+		list.set_content("---" + fol.name + "---")
+	end if
+	
+	if not list then
+		exit("Can't find or make file!")
+	else
+		list.set_content("---" + fol.name + "---")
+	end if
+	
+	print("Working on " + fol.name + " content list.")
+	counter = 99
+	running = true
+
+	while running
+		counter = counter + 1
+		
+		if counter >= 2000 then
+			running = false
+		end if
+			
+		for file in fol.get_files
+			string = ""
+			string = string + counter
+			string = string + ".so"
+			if (string) == file.name then
+				list.set_content(list.get_content + char(10) + file.name)
+			end if
+		end for
+	end while
+end for
+
+for folder in dir.get_folders
+	list = pc.File(folder.path + "/libs.txt")
+	missing = pc.File(folder.path + "/missing.txt")
+	
+	if not missing then
+		pc.touch(folder.path, "missing.txt")
+		missing = pc.File(folder.path + "/missing.txt")
+	end if
+
+	missing.set_content("---" + folder.name + "---")
+	
+	array = list.get_content.split("\n")[1:]
+	found = false
+	
+	greatest = array[-1][:-3]
+	counter = greatest.to_int
+	
+	print("Working on " + folder.name + " missing list.")
+
+	while counter >= 100
+		string = counter + ".so"
+
+		for line in array
+			if string == line then
+				found = true
+			end if
+		end for
+
+		if found == false then
+			missing.set_content(missing.get_content + char(10) + string)
+		else
+			found = false
+		end if
+
+		counter = counter - 1
+	end while
+end for

@@ -1,0 +1,986 @@
+listDirectory = function(cDir, target)
+	dir = cDir
+	
+	if target[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		array = target.split("/")
+		array = array[1:]
+	else
+		array = target.split("/")
+	end if
+	
+	for e in array
+		for folder in dir.get_folders
+			if folder.name == e then
+				dir = folder
+			end if
+		end for
+	end for
+	
+	for folder in dir.get_folders
+		print("<color=#00FFFF>" + folder.name + "</color>")
+	end for
+	
+	for file in dir.get_files
+		print("<color=green>" + file.name + "</color>")
+	end for
+end function
+
+changeDirectory = function(cDir, target)
+	dir = cDir
+	
+	if target[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		array = target.split("/")
+		array = array[1:]
+	else
+		array = target.split("/")
+	end if
+	
+	for e in array
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+	
+	return dir
+end function
+
+printFile = function(cDir, target)
+	dir = cDir
+	
+	if target[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		
+		array = target.split("/")
+		array = array[1:]
+		target = array[-1]
+		array = array[:-1]
+	else
+		array = target.split("/")
+		target = array[-1]
+		array = array[:-1]
+	end if
+	
+	for e in array
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+	
+	for file in dir.get_files
+		if file.name == target then
+			print(file.get_content)
+		end if
+	end for
+end function
+
+copyFile = function(cDir, source, target)
+	dir = cDir
+	file = null
+	dest = null
+	
+	if source[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		array = source.split("/")
+		file = array[-1]
+		array = array[1:-1]
+	else
+		array = source.split("/")
+		file = array[-1]
+		array = array[:-1]
+	end if
+	
+	for e in array
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+	
+	for f in dir.get_files
+		if f.name == file then
+			file = f
+		end if
+	end for
+	
+	dir = cDir
+	
+	if target[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		array = target.split("/")
+		dest = array[-1]
+		array = array[1:-1]
+	else
+		array = target.split("/")
+		dest = array[-1]
+		array = array[:-1]
+	end if
+	
+	for e in array
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+	
+	found = false
+	
+	for folder in dir.get_folders
+		if folder.name == dest then
+			dir = folder
+			file.copy(dir.path,file.name)
+			found = true
+		end if
+	end for
+	
+	if not found then
+		file.copy(dir.path,dest)
+	end if
+end function
+
+moveFile = function(cDir, source, target)
+	dir = cDir
+	file = null
+	dest = null
+	
+	if source[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		array = source.split("/")
+		file = array[-1]
+		array = array[1:-1]
+	else
+		array = source.split("/")
+		file = array[-1]
+		array = array[:-1]
+	end if
+	
+	for e in array
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+	
+	for f in dir.get_files
+		if f.name == file then
+			file = f
+		end if
+	end for
+	
+	dir = cDir
+	
+	if target[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		array = target.split("/")
+		dest = array[-1]
+		array = array[1:-1]
+	else
+		array = target.split("/")
+		dest = array[-1]
+		array = array[:-1]
+	end if
+	
+	for e in array
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+	
+	found = false
+	
+	for folder in dir.get_folders
+		if folder.name == dest then
+			dir = folder
+			file.move(dir.path,file.name)
+			found = true
+		end if
+	end for
+	
+	if not found then
+		file.move(dir.path,dest)
+	end if
+end function
+
+deleteFile = function(cDir, target)
+	dir = cDir
+	
+	if target[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		array = target.split("/")
+		target = array[-1]
+		array = array[1:-1]
+	else
+		array = target.split("/")
+		target = array[-1]
+		array = array[:-1]
+	end if
+	
+	for e in array
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+	
+	tmp = dir
+	while tmp.path != "/"
+		tmp = tmp.parent
+	end while
+	for folder in tmp.get_folders
+		if folder.name == "var" then
+			tmp = folder
+		end if
+	end for
+	for f in tmp.get_files
+		if f.name == "system.log" then
+			f.move("/var","system.bak")
+		end if
+	end for
+	
+	found = false
+	for folder in dir.get_folders
+		if folder.name == target then
+			print(file.name + " deleted.")
+			file.delete
+			found = true
+		end if
+	end for
+	
+	if not found then
+		for file in dir.get_files
+			if file.name == target then
+				print(file.name + " deleted.")
+				file.delete
+			end if
+		end for
+	end if
+	
+	for f in tmp.get_files
+		if f.name == "system.bak" then
+			f.move("/var","system.log")
+		end if
+	end for	
+end function
+
+crack = function(cDir, input)
+	data = get_custom_object
+	cryptools = data["crypto"]
+
+	dir = cDir
+
+	if input.len == 32 then
+		pass = cryptools.decipher(input)
+		print(pass)
+	else
+		if input[0] == "/" then
+			array = input.split("/")
+			target = array[-1]
+			array = array[1:-1]
+			while dir.path != "/"
+				dir = dir.parent
+			end while
+		else
+			array = input.split("/")
+			target = array[-1]
+			array = array[:-1]
+		end if
+	
+		for e in array
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end for
+		lines = []
+		for file in dir.get_files
+			if file.name == target then
+				content = file.get_content.split("\n")
+				for line in content
+					if line.split(":") > 1 then
+						pass = cryptools.decipher(line.split(":")[1])
+						lines.push(line.split(":")[0] + " - " + pass)
+					end if
+				end for
+			end if
+		end for
+		
+		for line in lines
+			print(line)
+		end for
+	end if
+end function
+
+connectService = function(cShell, login, target)
+	data = get_custom_object
+	shell = cShell
+	user = login.split("@")[0]
+	pass = login.split("@")[1]
+	ip = target
+
+	newShell = shell.connect_service(ip,22,user,pass)
+	pc = newShell.host_computer
+	pc.touch("/var","system.bak")
+	file = pc.File("/var/system.bak")
+	file.move("/var","system.log")
+	
+	data["shells"] = data["shells"] + [newShell]
+end function
+
+cleanup = function(opt)
+	data = get_custom_object
+	data["shells"].reverse
+
+	while data["shells"].len > 0
+		shell = data["shells"].pull
+		pc = shell.host_computer
+		pc.touch("/var","system.bak")
+		file = pc.File("/var/system.bak")
+		file.move("/var","system.log")
+	end while
+	
+	data["rshells"].reverse
+	while data["rshells"].len > 0
+		shell = data["rshells"].pull
+		if typeof(shell) == "shell" then
+			pc = shell.host_computer
+			pc.touch("/var","system.bak")
+			file = pc.File("/var/system.bak")
+			if file then
+				file.move("/var","system.log")
+			end if
+		end if
+	end while
+	
+	if opt == 0 then
+		exit
+	end if
+end function
+
+listShells = function()
+	data = get_custom_object
+	counter = 0
+	for shell in data["shells"]
+		print(counter + ": " + shell.host_computer.public_ip + "/" + shell.host_computer.local_ip)
+		counter = counter + 1
+	end for
+end function
+
+idShell = function(choice)
+	if typeof(choice) == "string" then
+		shell = data["shells"][choice.to_int]
+	else if typeof(choice) == "number" then
+		shell = data["shells"][choice]
+	end if
+	pc = shell.host_computer
+	pc.touch("/home/guest","toomuch")
+	pc.touch("/var","system.bak")
+	file = pc.File("/home/guest/toomuch")
+	user = file.owner
+	file.delete
+	file = pc.File("/var/system.bak")
+	file.move("/var","system.log")
+	return user
+end function
+
+removeShell = function(choice, cShell)
+	data = get_custom_object
+	choice = choice.to_int
+	publicIp = data["shells"][choice].host_computer.public_ip
+	localIp = data["shells"][choice].host_computer.local_ip
+	data["shells"].remove(choice)
+	
+	if cShell.host_computer.public_ip == publicIp and cShell.host_computer.local_ip == localIp then
+		if data["shells"].len > 0 then
+			shell = data["shells"][-1]
+		else
+			shell = data["myShell"]
+		end if
+		return shell
+	else
+		return cShell
+	end if
+end function
+
+uploadFile = function(cShell, cDir, source, destination)
+	data = get_custom_object
+	if source[0] == "/" then
+		data["myShell"].scp(source,destination,cShell)
+	else
+		string = cDir.path + "/" + source
+		data["myShell"].scp(string,destination,cShell)
+	end if
+end function
+
+downloadFile = function(cShell, cDir, source, destination)
+	data = get_custom_object
+	if source[0] == "/" then
+		cShell.scp(source,destination,data["myShell"])
+	else
+		string = cDir.path + "/" + source
+		cShell.scp(string,destination,data["myShell"])
+	end if
+end function
+
+showNetwork = function(cPc)
+	pc = cPc
+	print("\nEthernet connection:\n----------------\nPublic IP: " + pc.public_ip + "\nLocal IP: " + pc.local_ip + "\nGateway: " + pc.network_gateway + "\n")
+end function
+
+changeNetwork = function(cPc, newIp, newGateway, device)
+	pc = cPc
+	ip = newIp
+	gateway = newGateway
+	
+	pc.connect_ethernet(device,ip,gateway)
+	showNetwork(pc)
+end function
+
+changeUser = function(cShell, user, cDir)
+	found = false
+	for file in cDir.get_files
+		if file.name == "grab" and file.is_binary then
+			cShell.launch(file.path,"shell " + user)
+			found = true
+			return true
+		end if
+	end for
+	
+	if not found then
+		data["myShell"].scp("/root/grab",cDir.path,cShell)
+		cShell.launch(cDir.path + "/grab","shell " + user)
+		return true
+	end if
+end function
+
+listRShells = function()
+	counter = 0
+	if data["rshells"].len > 0 then
+		for s in data["rshells"]
+			pc = s.host_computer
+			print(counter + ": " + pc.public_ip + "/" + pc.local_ip)
+			counter = counter + 1
+		end for
+	else
+		print("No rshells.")
+	end if
+end function
+
+idRShell = function(choice)
+	if typeof(choice) == "string" then
+		shell = data["rshells"][choice.to_int]
+	else if typeof(choice) == "number" then
+		shell = data["rshells"][choice]
+	end if
+	if typeof(shell) == "shell" then
+		pc = shell.host_computer
+		pc.touch("/home/guest","toomuch")
+		file = pc.File("/home/guest/toomuch")
+		user = file.owner
+		file.move("/var","system.log")
+		return user
+	else
+		return null
+	end if
+end function
+
+showProcesses = function(cPc)
+	pc = cPc
+	print(format_columns(pc.show_procs))
+end function
+
+closeProcess = function(cPc, target)
+	pc = cPc
+	
+	if typeof(target) == "string" then
+		PID = target.to_int
+	else if typeof(target) == "number" then
+		PID = target
+	end if
+
+	pc.close_program(PID)
+	print("Done.")
+end function
+
+changePassword = function(cPc, user)
+	pc = cPc
+	
+	pass = user_input("Enter new password: ",true)
+	pc.change_password(user,pass)
+end function
+
+changePermissions = function(cDir, perms, target, recursive)
+	dir = cDir
+	
+	if target[0] == "/" then
+		while dir.path != "/"
+			dir = dir.parent
+		end while
+		array = target.split("/")
+		target = array[-1]
+		array = array[1:-1]
+	else
+		array = target.split("/")
+		target = array[-1]
+		array = array[:-1]
+	end if
+	
+	for e in array
+		if e == ".." then
+			dir = dir.parent
+		else
+			for folder in dir.get_folders
+				if folder.name == e then
+					dir = folder
+				end if
+			end for
+		end if
+	end for
+	
+	found = false
+	
+	for file in dir.get_files
+		if file.name == target then
+			target = file
+			found = true
+		end if
+	end for
+	
+	if not found then
+		for folder in dir.get_folders
+			if folder.name == target then
+				target = folder
+				found = true
+			end if
+		end for
+	end if
+	
+	if typeof(target) != "file" then
+		print("Error: file not found.")
+	else
+		target.chmod(perms,recursive)
+	end if
+end function
+
+getExploits = function(shell, ip, port)
+	ipAddress = ip
+	
+	if typeof(port) != "number" then
+		tPort = port.to_int
+	else
+		tPort = port
+	end if
+	
+	mx = include_lib("/lib/metaxploit.so")
+	
+	if not mx then
+		data["myShell"].scp("/lib/metaxploit.so",current_path,shell)
+		mx = include_lib(current_path + "/metaxploit.so")
+	end if
+	
+	if not mx then
+		print("Couldn't load metaxploit.")
+	end if
+	
+	net = mx.net_use(ipAddress, tPort)
+	lib = net.dump_lib
+	
+	addresses = mx.scan(lib)
+	
+	hacks = []
+	for mem in addresses
+		raw = mx.scan_address(lib,mem)
+		
+		strings = raw.split("Unsafe check: ")
+		strings = strings[1:]
+		values = []
+		pair = {}
+		for string in strings
+			value = string[string.indexOf("<b>")+3:string.indexOf("</b>")]
+			values = values + [value]
+		end for
+		pair["memory"] = mem
+		pair["values"] = values
+	end for
+	hacks = hacks + [pair]
+	data["lib"] = lib
+	data["hacks"] = hacks
+end function
+
+pseudoNmap = function(target)
+	if is_lan_ip(target) then
+		router = get_router
+		ports = router.device_ports(target)
+	else
+		router = get_router(target)
+		ports = router.used_ports
+	end if
+
+	print("\nStarting nmap v1.2 at " + current_date + "\nInteresting ports on " + target + " (v" + router.kernel_version + ")\n")
+	
+	header = "PORT STATE SERVICE VERSION LAN"
+	
+	info = ""
+	counter = 0
+	print(ports)
+	for port in ports
+		service_info = router.port_info(port)
+		lan_ips = port.get_lan_ip
+		port_status = "open"
+		if(port.is_closed and router) then
+			port_status = "closed"
+		end if
+		info = info + "\n" + port.port_number + " " + port_status + " " + service_info + " " + lan_ips
+		counter = counter + 1
+	end for
+	if counter > 0 then
+		fin = header + info
+		print(format_columns(fin) + "\n")
+	else
+		print("No interesting ports found.\n")
+	end if
+end function
+
+getInfo = function(shell, target)
+	ipAddress = target
+	mx = include_lib("/lib/metaxploit.so")
+	
+	if not mx then
+		data["myShell"].scp("/lib/metaxploit.so",current_path,shell)
+		mx = include_lib(current_path + "/metaxploit.so")
+	end if
+	
+	lib = data["lib"]
+	hacks = data["hacks"]
+	
+	password = []
+	mail = {}
+	
+	for hack in hacks
+		for value in hack["values"]
+			result = lib.overflow(hack["memory"],value,ipAddress)
+			if typeof(result) == "shell" then
+				pc = shell.host_computer
+				dir = pc.File("/etc")
+				
+				for file in dir.get_files
+					if file.name == "passwd" then
+						if file.has_permission("r") then
+							password = file
+						else
+							print("Password file permission denied.")
+						end if
+					end if
+				end for
+				
+				dir = pc.File("/home")
+				
+				for folder in dir.get_folders
+					for fol in folder.get_folders
+						if fol.name == "Config" then
+							for file in fol.get_files
+								if file.name == "Mail.txt" then
+									if file.has_permission("r") then
+										mail[file.get_content.split(":")[0]] = file.get_content.split(":")[1]
+									else
+										print("Mail.txt permission denied.")
+									end if
+								end if
+							end for
+						end if
+					end for
+				end for
+				
+			else if typeof(result) == "computer" then
+				
+				pc = result
+				dir = pc.File("/etc")
+				
+				for file in dir.get_files
+					if file.name == "passwd" then
+						if file.has_permission("r") then
+							password = file
+						else
+							print("Password file permission denied.")
+						end if
+					end if
+				end for
+				
+				dir = pc.File("/home")
+				
+				for folder in dir.get_folders
+					for fol in folder.get_folders
+						if fol.name == "Config" then
+							for file in fol.get_files
+								if file.name == "Mail.txt" then
+									if file.has_permission("r") then
+										mail[file.get_content.split(":")[0]] = file.get_content.split(":")[1]
+									else
+										print("Mail.txt permission denied.")
+									end if
+								end if
+							end for
+						end if
+					end for
+				end for
+				
+			else if typeof(result) == "file" then
+				
+				dir = result
+				while dir.path != "/"
+					dir = dir.parent
+				end while
+				
+				for folder in dir.get_folders
+					if folder.name == "etc" then
+						dir = folder
+					end if
+				end for
+				
+				for file in dir.get_files
+					if file.name == "passwd" then
+						if file.has_permission("r") then
+							password = file
+						else
+							print("Password file permission denied.")
+						end if
+					end if
+				end for
+				
+				while dir.path != "/"
+					dir = dir.parent
+				end while
+				
+				for folder in dir.get_folders
+					if folder.name == "home" then
+						dir = folder
+					end if
+				end for
+				
+				for folder in dir.get_folders
+					for fol in folder.get_folders
+						if fol.name == "Config" then
+							for file in fol.get_files
+								if file.name == "Mail.txt" then
+									if file.has_permission("r") then
+										mail[file.get_content.split(":")[0]] = file.get_content.split(":")[1]
+									else
+										print("Mail.txt permission denied.")
+									end if
+								end if
+							end for
+						end if
+					end for
+				end for
+				
+			end if
+		end for
+	end for
+
+	if typeof(password) == "file" then
+		print("\n-----Passwords-----\n" + password.get_content + "-------------------")
+	else
+		print("Could not read password file.")
+	end if
+	
+	if typeof(mail) == "map" then
+		print("\n-----Mail Accs-----")
+		for entry in mail
+			print(entry["key"] + ":" + entry["value"])
+		end for
+		print("-------------------\n")
+	else
+		print("Could not read mail file.")
+	end if
+	
+end function
+
+getAccess = function(shell, target,port)
+	ipAddress = target
+	
+	data = get_custom_object
+	pc = shell.host_computer
+	dir = pc.File("/home/guest")
+	
+	data["myShell"].scp("/root/grab","/home/guest",shell)
+	shell.launch("/home/guest/grab","access " + target + " " + port)
+
+end function
+
+listPcs = function()
+	counter = 0
+
+	for pc in data["pcs"]
+		print(counter + ": " + pc.public_ip + "/" + pc.local_ip)
+		counter = counter + 1
+	end for
+	
+end function
+
+removePc = function(cPc,choice)
+	pc = cPc
+	
+	if typeof(choice) == "number" then
+		option = choice
+	else
+		option = choice.to_int
+	end if
+	
+	cPublicIp = data["pcs"][option].public_ip
+	cLocalIp = data["pcs"][option].local_ip
+	
+	data["pcs"].remove(option)
+	
+	if pc.public_ip == cPublicIp and pc.local_ip == cLocalIp then
+		pc = data["pcs"][-1]
+		
+		if not pc then
+			print("No PCs left in list! Loading home PC!")
+			pc = data["myShell"].host_computer
+		end if
+	end if
+	
+	return pc
+end function
+
+cleanLog = function(cPc)
+	pc = cPc
+	dir = pc.File("/var")
+	
+	pc.touch("/var","system.bak")
+	log = pc.File("/var/system.bak")
+	log.move("/var","system.log")
+	print("Logs cleaned.")
+end function
+
+wipe = function(cPc)
+	option = user_input("Confirm wipe? (y/n): ")
+	if option.lower == "y" then
+		pc = cPc
+		dir = pc.File("/boot")
+		log = pc.File("/var/system.log")
+		log.move("/var","system.bak")
+		
+		for file in dir.get_files
+			file.delete
+		end for
+		print("Files deleted.")
+		
+		log = pc.File("/var/system.bak")
+		log.move("/var","system.log")
+		print("Log cleared.")
+	end if
+end function
+
+scrapeBank = function(cShell)
+	shell = cShell
+	data["myShell"].scp("/root/grab",current_path,shell)
+	shell.launch(current_path + "/grab","banks")
+	file = data["myShell"].host_computer.File("/root/document.txt")
+
+	if not file then
+		data["myShell"].host_computer.touch("/root","document.txt")
+		file = data["myShell"].host_computer.File("/root/document.txt")
+	end if
+	
+	first = true
+	for bank in data["banks"]
+		if first then
+			file.set_content(bank)
+			first = false
+		else
+			file.set_content(file.get_content + char(10) + bank)
+		end if
+	end for
+	print("File updated, ready for cracking.")
+end function
+
+scanNetwork = function(cShell)
+	shell = cShell
+	
+	data["myShell"].scp("/root/grab",current_path,shell)
+	shell.launch(current_path + "/grab","network")
+end function
+
+getLocalExploits = function(cShell, cDir, dest)
+	data["myShell"].scp("/root/grab",cDir.path,cShell)
+	shell.launch(cDir.path + "/grab","local exploits " + dest + " " + cDir.path)
+
+	mx = include_lib("/lib/metaxploit.so")
+	addresses = mx.scan(data["lib"])
+	
+	hacks = []
+	for mem in addresses
+		pair = {}
+		values = []
+		raw = mx.scan_address(data["lib"],mem)
+		
+		strings = raw.split("Unsafe check: ")[1:]
+		for string in strings
+			value = string[string.indexOf("<b>")+3:string.indexOf("</b>")]
+			
+			values.push(value)
+		end for
+		pair["memory"] = mem
+		pair["values"] = values
+		hacks.push(pair)
+	end for
+	
+	data["hacks"] = hacks	
+			
+end function

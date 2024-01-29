@@ -1,0 +1,90 @@
+//Scans the internet for the specified library version and returns hits as it
+//finds them. Will scan the entire internet if left alone!
+//Note to self, add an all all handler.
+
+//Coded by Daknit
+if (params.len != 2 and params.len != 3) or params[0] == "-h" or params[0] == "--help" then exit("Syntax: netscan [service] [version]\nThis program will scan the internet for the service and version requested.")
+
+shell = get_shell
+pc = shell.host_computer
+running = true
+
+if params.len != 3 then
+	array = [1,0,0,0]
+else
+	array = params[2].split("\.")
+	counter = 0
+	for e in array
+		array[counter] = e.to_int
+		counter = counter + 1
+	end for
+end if
+
+while running
+	array[-1] = array[-1] + 1
+		
+	if array[-1] >= 256 then
+		array[-2] = array[-2] + 1
+		array[-1] = array[-1] - 255
+	end if
+	
+	if array[-2] >= 256 then
+		array[-3] = array[-3] + 1
+		array[-2] = array[-2] - 255
+	end if
+	
+	if array[-3] >= 256 then
+		array[-4] = array[-4] + 1
+		array[-3] = array[-3] - 255
+	end if
+	
+	if array[0] > 255 then
+		running = false
+	else
+		ip = array[0] + "." + array[1] + "." + array[2] + "." + array[3]
+		if not is_valid_ip(ip) then
+			print(ip + " invalid address.")
+			break
+		else
+			print("Checking " + ip + "...")
+		end if
+		
+		router = get_router(ip)
+		ports = router.used_ports
+		routerVersion = null
+		
+		if params[0] == "router" then
+			routerVersion = router.kernel_version
+		else
+			for port in ports
+				services = router.port_info(port)
+				for line in services.split("\n")
+					service = line.split(" ")
+					serviceVersion = service[1]
+					service = service[0]
+					if service == params[0] then
+						if serviceVersion == params[1] then
+							clear_screen
+							print(router.public_ip + " is running " + service + " v" + serviceVersion)
+							opt = user_input("Continue searching? (y/n) ",false,true)
+							if opt.lower == "n" then
+								running = false
+							end if
+						end if
+					end if
+				end for
+			end for
+		end if
+
+		if routerVersion and routerVersion == params[1] then
+			clear_screen
+			print(router.public_ip + " is version " + routerVersion)
+			opt = user_input("Continue searching? (y/n ) ", false, true)
+			if opt.lower == "n" then
+				running = false
+			end if
+		end if
+
+	end if
+	yield
+end while

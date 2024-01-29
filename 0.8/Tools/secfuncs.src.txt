@@ -1,0 +1,326 @@
+daily = function ( shell, myShell )
+	print("Running daily maintenance.")
+
+	data = get_custom_object
+	
+	pc = shell.host_computer
+	dir = pc.File("/lib")
+
+	mx = include_lib("/lib/metaxploit.so")
+
+	if not mx then
+		mx = include_lib(current_path + "/metaxploit.so")
+	end if
+	
+	if not mx then
+		mx = include_lib(parent_path(program_path) + "/metaxploit.so")
+	end if
+	
+	if not mx then
+		mx = include_lib("/home/guest/metaxploit.so")
+	end if
+
+	if not mx then
+		shell.launch("/bin/apt-get", "addrepo 192.246.232.157")
+		shell.launch("/bin/apt-get", "update")
+		shell.launch("/bin/apt-get", "install metaxploit.so")
+		mx = include_lib("/lib/metaxploit.so")
+	end if
+
+	if not mx then exit("Error 101")
+
+	if not pc.get_name == "router" then
+
+	for file in myShell.host_computer.File("/root/tools/sectools/secure").get_files
+		secure = data["mx"].load(file.path)
+		lib = mx.load("/lib/" + file.name)
+		
+		if lib then
+			if secure.version != lib.version then
+				myShell.scp("/root/tools/sectools/secure/" + file.name, "/lib", shell)
+				file.copy("/lib",file.name)
+				print("Secure file " + file.name + " installed.")
+			end if
+		end if
+	end for
+
+	end if
+	print(pc.get_name + " daily maintenance complete.")
+	
+	libCheck(myShell)
+	
+end function
+
+logmon = function ( shell )
+	pc = shell.host_computer
+	file = pc.File("/var/system.log")
+
+	if not file.is_binary or not file then
+		print("<color=red>Alert! Log file has been tampered with!</color>")
+		file = pc.File("/root/Logs/blank/system.log")
+		file.copy("/var","system.log")
+		print("File replaced. PANIC!")
+		panic(pc)
+	end if
+
+end function
+
+filemon = function ( shell )
+	pc = shell.host_computer
+	dir = pc.File("/home/guest")
+	count = 0
+
+	for folder in dir.get_folders
+		count = count + 1
+	end for
+
+	for f in dir.get_files
+		count = count + 1
+	end for
+
+	if count > 4 then
+		print("<color=red>ANOMOLOUS FILE FIND IN GUEST FOLDER! PANIC!</color>")
+		panic(pc)
+	end if
+
+	dir = pc.File("/bin")
+	counter = 0
+
+	for folder in dir.get_folders
+		print("<color=red>Folder found in /bin! PANIC!</color>")
+		panic(pc)
+	end for
+
+	for f in dir.get_files
+
+		if not (f.owner == "Daknit" or f.owner == "root") then
+			print("<color=red>File from unknown third party! PANIC!</color>")
+			panic(pc)
+		end if
+
+		if not (f.group == "root" or f.group == "romulans" or f.group == "Daknit") then
+			print("<color=red>File belongs to unknown third party group! PANIC!</color>")
+			panic(pc)
+		end if
+
+		counter = counter + 1
+	end for
+
+	if not ((counter == 62 and pc.get_name == "GeorgieW") or (counter == 35 and pc.get_name == "Mer123") or (counter == 44 and pc.get_name == "Awrzyk6") or (counter == 37 and pc.get_name == "Crealphil") or (counter == 37 and pc.get_name == "Olmarysermero") or (counter == 37 and pc.get_name == "En21212") or (counter == 21 and pc.get_name == "router") or (counter == 47 and pc.get_name == "Y_26")) then
+		print(counter)
+		print("<color=red>Incorrect count of files in /bin! PANIC!</color>")
+		panic(pc)
+	end if
+
+	locs = ["/root/Config","/home/Daknit/Config","/home/guest/Config","/home/root/Config"]
+
+	for loc in locs
+		dir = pc.File(loc)
+
+		if not dir == null then
+
+			for f in dir.get_files
+
+				if not f.name == "Browser.txt" then
+					print(f.path + " on " + pc.get_name + " deleted.")
+					f.delete
+				end if
+			end for
+		end if
+	end for
+	
+	dir = pc.File("/")
+
+	for folder in dir.get_folders
+
+		if folder.name == "boot" then
+			dir = folder
+		end if
+
+	end for
+
+	if not dir.name == "boot" then
+		print("Boot folder not found. PANIC!")
+		panic(pc)
+	else
+		list = []
+
+		for f in dir.get_files
+			list = list + [f.name]
+		end for
+
+		if list.len != 3 then
+			print("Boot folder file count inaccurate! PANIC!")
+			panic(pc)
+		end if
+	end if
+	
+	dir = pc.File("/")
+	
+	for folder in dir.get_folders
+		if folder.name == "etc" then
+			for file in folder.get_files
+				if file.name == "passwd" then
+					print("Found passwd file, deleting that shit.")
+					file.delete
+				end if
+			end for
+		end if
+	end for
+	
+	dir = pc.File("/")
+	
+	for folder in dir.get_folders
+
+		if folder.name == "sys" then
+			dir = folder
+		end if
+
+	end for
+
+	if not dir.name == "sys" then
+		print("sys folder not found. PANIC!")
+		panic(pc)
+	else
+		list = []
+
+		for f in dir.get_files
+			list = list + [f.name]
+		end for
+
+		if list.len != 3 then
+			print("sys folder file count inaccurate! PANIC!")
+			panic(pc)
+		end if
+	end if
+
+	services = []
+	required = ["net.so", "init.so", "aptclient.so", "metaxploit.so", "crypto.so"]
+
+	if pc.get_name == "router" then
+		required = required + ["kernel_router.so"]
+		required = required + ["libhttp.so"]
+	else if pc.get_name == "Mer123" then
+		required = required + ["libssh.so"]
+	else if pc.get_name == "Crealphil" then
+		required = required + ["libssh.so"]
+		required = required + ["librshell.so"]
+	else if pc.get_name == "Olmarysermero" then
+		required = required + ["libssh.so"]
+		required = required + ["librshell.so"]
+	else if pc.get_name == "Awrzyk6" then
+		required = required + ["libssh.so"]
+	else if pc.get_name == "En21212" then
+		required = required + ["librshell.so"]
+		required = required + ["libssh.so"]
+	end if
+
+	dir = pc.File("/lib")
+	found = false
+	for f in dir.get_files
+		for n in required
+			if f.name == n then
+				found = true
+			end if
+		end for
+
+		if not found then
+			if not pc.get_name != "router" then
+				print(f.name + " deleted.")
+				f.delete
+			end if
+		else
+			found = false
+		end if
+	end for
+end function
+
+panic = function ( pc )
+	first_time = true
+
+	while true
+		print("<color=red>PANIC! SECURE MY SOUL! " + pc.get_name + " IS FREAKING!</color>")
+		procs = pc.show_procs
+		array = procs.split("\n")
+		array = array[1:]
+
+		if not array.len == 0 then
+			if array[0].split(" ")[-1] == "kernel_task" and array[1].split(" ")[-1] == "Xorg" and array[2].split(" ")[-1] == "Terminal" then
+				array = array[3:]
+			end if
+
+			for line in array
+				id = line.split(" ")
+				if id[-1] != "rshell_client" then
+					if id[-1] != program_path.split("/")[-1] then
+						id = id[1].to_int
+						pc.close_program(id)
+					end if
+				end if
+			end for
+
+		end if
+
+		if round(time)%10 == 0 then
+			clear_screen
+		end if
+
+		wait(1)
+		recover()
+	end while
+end function
+
+libCheck = function( shell )
+
+	pc = shell.host_computer
+	dir = pc.File("/root/libraries/tmp")
+	apt = include_lib("/lib/aptclient.so")
+	mx = include_lib("/lib/metaxploit.so")	
+	apt.update
+
+	list = ["kernel_router.so","kernel_module.so","init.so","net.so","blockchain.so","libhttp.so","libftp.so","aptclient.so","libssh.so","librshell.so","metaxploit.so","crypto.so","libsql.so","libsmtp.so","librepository.so","libchat.so"]
+	
+	for entry in list
+		apt.install(entry,dir.path)
+	end for
+	
+	libraryStorage = dir.parent
+	currentDirectory = libraryStorage
+	found = false
+	
+	for file in dir.get_files
+		if pc.get_name == "router" then break
+		short = file.name[:-3]
+		dump = mx.load(file.path)
+		ver = dump.version
+		ver = ver.split("\.")
+		ver = ver[0] + ver[1] + ver[2]
+		
+		for folder in currentDirectory.get_folders
+			if folder.name == short then
+				currentDirectory = folder
+			end if
+		end for
+		
+		for f in currentDirectory.get_files
+			if f.name == (ver + ".so") then
+				found = true
+			end if
+		end for	
+	
+		if not found then
+			print("Moving unique file " + file.name + " to " + currentDirectory.path)
+			file.copy(currentDirectory.path,ver + ".so")
+		end if
+	end for
+	
+	if pc.get_name == "router" then
+		file = pc.File("/root/libraries/libhttp/100.so")
+		file.copy("/lib","libhttp.so")
+	end if
+	
+	print("Cleaning up log check.")
+	for file in pc.File("/root/libraries/tmp").get_files
+		file.delete
+	end for
+end function
